@@ -1,5 +1,27 @@
 use std::fs::read_to_string;
 
+pub fn get_index_of_num_word(line: &str) -> Option<usize> {
+    let words = [
+        "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+    ];
+
+    let mut smallest: usize = line.len();
+    for word in words {
+        let idx1word = line.find(word);
+        if let Some(pos) = idx1word {
+            if pos < smallest {
+                smallest = pos
+            }
+        }
+    }
+
+    if smallest < line.len() {
+        return Some(smallest);
+    } else {
+        return None;
+    }
+}
+
 pub fn get_first_and_last_digt(line: &str) -> u16 {
     let is_digit = |c: char| (c >= '0') && (c <= '9');
     let idx1 = line.find(is_digit);
@@ -35,5 +57,20 @@ mod tests {
         assert_eq!(get_first_and_last_digt("498879"), 49);
         assert_eq!(get_first_and_last_digt("khn1lbmzhvlsix3"), 13);
         assert_eq!(get_first_and_last_digt("treb7uchet"), 77);
+    }
+
+    #[test]
+    fn test_word_pos() {
+        assert_eq!(get_index_of_num_word("eightwothree"), Some(0));
+        assert_eq!(get_index_of_num_word("khn1twolbmzhvlsix3"), Some(4));
+        assert_eq!(get_index_of_num_word("zoneight234"), Some(1));
+    }
+
+    #[test]
+    fn test_word_and_digits() {
+        //assert_eq!(get_first_and_last_digt("two1nine"), 29);
+        assert_eq!(get_first_and_last_digt("eightwothree"), 83);
+        //assert_eq!(get_first_and_last_digt("khn1lbmzhvlsix3"), 13);
+        //assert_eq!(get_first_and_last_digt("zoneight234"), 14);
     }
 }
