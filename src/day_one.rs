@@ -104,16 +104,40 @@ pub fn get_first_num(line: &str) -> char {
     get_num_word_value(line, idx)
 }
 
-pub fn get_last_digit(line: &str) -> u16 {
-    let idx1 = line.find(is_digit);
-    let idx2 = line.rfind(is_digit);
+pub fn get_last_num(line: &str) -> char {
+    let idx_digit = line.rfind(is_digit);
+    let idx_word = get_index_of_last_num_word(line);
 
-    let c1 = line.chars().nth(idx1.unwrap()).unwrap();
-    let c2 = line.chars().nth(idx2.unwrap()).unwrap();
+    let idx: usize;
+    let mut is_word = false;
+    if idx_digit.is_none() {
+        idx = idx_word.unwrap();
+        is_word = true;
+    } else if idx_word.is_none() {
+        idx = idx_digit.unwrap();
+    } else {
+        if idx_digit.unwrap() > idx_word.unwrap() {
+            idx = idx_digit.unwrap();
+        } else {
+            idx = idx_word.unwrap();
+            is_word = true;
+        }
+    }
+
+    if !is_word {
+        return line.chars().nth(idx).unwrap();
+    }
+
+    get_num_word_value(line, idx)
+}
+
+pub fn get_first_and_last_digit(line: &str) -> u16 {
+    let num_first = get_first_num(line);
+    let num_last = get_last_num(line);
 
     let mut erg = String::new();
-    erg.push(c1);
-    erg.push(c2);
+    erg.push(num_first);
+    erg.push(num_last);
 
     return erg.parse::<u16>().unwrap();
 }
@@ -122,7 +146,7 @@ pub fn sum_line_digits(filename: &str) -> u32 {
     let mut result: u32 = 0;
 
     for line in read_to_string(filename).unwrap().lines() {
-        //result += get_first_and_last_digt(line) as u32;
+        result += get_first_and_last_digit(line) as u32;
     }
 
     result
@@ -148,14 +172,6 @@ mod tests {
     }
 
     #[test]
-    fn test_get() {
-        // assert_eq!(get_first_and_last_digt("ninethree4v1five"), 41);
-        // assert_eq!(get_first_and_last_digt("498879"), 49);
-        // assert_eq!(get_first_and_last_digt("khn1lbmzhvlsix3"), 13);
-        // assert_eq!(get_first_and_last_digt("treb7uchet"), 77);
-    }
-
-    #[test]
     fn test_word_pos() {
         assert_eq!(get_index_of_first_num_word("eightwothree"), Some(0));
         assert_eq!(get_index_of_first_num_word("khn1twolbmzhvlsix3"), Some(4));
@@ -167,9 +183,25 @@ mod tests {
 
     #[test]
     fn test_word_and_digits_first() {
+        assert_eq!(get_first_num("ninethree4v1five"), '9');
         assert_eq!(get_first_num("two1nine"), '2');
         assert_eq!(get_first_num("eightwothree"), '8');
         assert_eq!(get_first_num("khn1lbmzhvlsix3"), '1');
         assert_eq!(get_first_num("zoneight234"), '1');
+    }
+    #[test]
+    fn test_word_and_digits_last() {
+        assert_eq!(get_last_num("two1nine"), '9');
+        assert_eq!(get_last_num("eightwothree"), '3');
+        assert_eq!(get_last_num("khn1lbmzhvlsix3"), '3');
+        assert_eq!(get_last_num("zoneight234"), '4');
+    }
+
+    #[test]
+    fn test_get() {
+        assert_eq!(get_first_and_last_digit("ninethree4v1five"), 95);
+        assert_eq!(get_first_and_last_digit("498879"), 49);
+        assert_eq!(get_first_and_last_digit("khn1lbmzhvlsix3"), 13);
+        assert_eq!(get_first_and_last_digit("treb7uchet"), 77);
     }
 }
