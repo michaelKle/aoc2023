@@ -16,6 +16,8 @@ fn main() {
     {
         let day02_path = std::env::var("AOC02_FILE").expect("AOC02_FILE must be set.");
         let sum = day_two::sum_ids_of_possible_games(&day02_path, 12, 13, 14);
-        println!("Day 2: Sum of IDs is {0}", sum);
+        println!("Day 2: Sum of IDs of possible games is {0}", sum);
+        let sum = day_two::sum_power_of_all_games(&day02_path);
+        println!("Day 2: Sum of power of all games is {0}", sum);
     }
 }
