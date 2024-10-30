@@ -62,15 +62,15 @@ pub fn sum_ids_of_possible_games(filename: &str, red: u8, green: u8, blue: u8) -
 }
 
 pub fn sum_power_of_all_games(filename: &str) -> u32 {
-let mut result: u32 = 0;
+    let mut result: u32 = 0;
     for line in read_to_string(filename).unwrap().lines() {
-        let (min_red, min_green, min_blue) = extract_min_colors(line);
-        
-        result += id as u32;
+        let (_id, min_red, min_green, min_blue) = extract_max_colors(line);
+
+        let power: u32 = min_red as u32 * min_green as u32 * min_blue as u32;
+        result += power;
     }
 
     result
-}
 }
 
 #[cfg(test)]
@@ -88,7 +88,7 @@ mod tests {
     }
 
     #[test]
-    fn test_extract_tuple_vec() {
+    fn test_extract_tuple_vec_max() {
         assert_eq!(
             extract_max_colors("Game 41: 4 red, 1 green, 2 blue; 4 red; 4 red"),
             (41, 4, 1, 2)
@@ -96,6 +96,16 @@ mod tests {
         assert_eq!(
             extract_max_colors("Game 54: 7 blue, 13 red, 7 green; 1 red, 2 green; 11 red, 10 green, 5 blue; 10 red, 8 green, 5 blue; 8 green, 12 blue, 12 red"),
             (54, 13, 10, 12)
+        );
+        assert_eq!(
+            extract_max_colors("Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green"),
+            (1, 4, 2, 6)
+        );
+        assert_eq!(
+            extract_max_colors(
+                "Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red"
+            ),
+            (3, 20, 13, 6)
         );
     }
 }
