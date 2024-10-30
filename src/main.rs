@@ -20,4 +20,10 @@ fn main() {
         let sum = day_two::sum_power_of_all_games(&day02_path);
         println!("Day 2: Sum of power of all games is {0}", sum);
     }
+    // day 3
+    {
+        let day03_path = std::env::var("AOC03_FILE").expect("AOC03_FILE must be set.");
+
+        println!("Day 3: Sum of all all part numbers {0}", 1);
+    }
 }
