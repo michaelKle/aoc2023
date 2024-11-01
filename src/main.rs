@@ -1,6 +1,7 @@
 use dotenv::dotenv;
 
 mod day_one;
+mod day_three;
 mod day_two;
 
 fn main() {
@@ -22,7 +23,7 @@ fn main() {
     }
     // day 3
     {
-        let day03_path = std::env::var("AOC03_FILE").expect("AOC03_FILE must be set.");
+        let _day03_path = std::env::var("AOC03_FILE").expect("AOC03_FILE must be set.");
 
         println!("Day 3: Sum of all all part numbers {0}", 1);
     }
