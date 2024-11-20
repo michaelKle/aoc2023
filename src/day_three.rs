@@ -1,3 +1,5 @@
+use std::{collections::HashSet, fs::read_to_string};
+
 fn is_symbol(x: u8) -> bool {
     let non_symbols = "0123456789.";
 
@@ -36,8 +38,12 @@ fn has_symbol(line: &str, pos: u16) -> bool {
     is_symbol(bytes[left]) || is_symbol(bytes[middle]) || is_symbol(bytes[right])
 }
 
-fn get_number(line: &str, pos: u16) -> Option<u64> {
+fn get_number(line: &str, pos: usize) -> Option<u64> {
     let bytes = line.as_bytes();
+    if pos >= bytes.len() {
+        return None;
+    }
+
     let c = bytes[pos as usize];
     let numbers = "0123456789";
     let erg = numbers.find(c as char);
@@ -46,7 +52,7 @@ fn get_number(line: &str, pos: u16) -> Option<u64> {
     }
 
     let mut end: usize = bytes.len();
-    for x in pos..(bytes.len() as u16) {
+    for x in pos..bytes.len() {
         if !is_number(bytes[x as usize]) {
             end = x as usize;
             break;
@@ -67,15 +73,59 @@ fn get_number(line: &str, pos: u16) -> Option<u64> {
     Some(num)
 }
 
-fn get_part_numbers(upper_line: &str, middle_line: &str, lower_line: &str) -> Vec<u16> {
-    for (i, c) in middle_line.char_indices().enumerate() {
-        println!("{0} => {1}", i, c.1);
+fn insert_if_number(col: &mut HashSet<u64>, num: Option<u64>) {
+    if num.is_some() {
+        // if col.contains(&num.unwrap()) {
+        //     println!("Collection already contains {}", num.unwrap());
+        // }
+        col.insert(num.unwrap());
+    }
+}
 
-        if is_symbol_char(c.1) {
-            println!("{0} has symbol", i);
+fn get_part_numbers(upper_line: &str, middle_line: &str, lower_line: &str) -> HashSet<u64> {
+    let mut numbers = HashSet::new();
+
+    let middle_line_bytes = middle_line.as_bytes();
+
+    for x in 1..middle_line_bytes.len() - 1 {
+        let c = middle_line_bytes[x];
+
+        if is_symbol(c) {
+            insert_if_number(&mut numbers, get_number(upper_line, x - 1));
+            insert_if_number(&mut numbers, get_number(upper_line, x));
+            insert_if_number(&mut numbers, get_number(upper_line, x + 1));
+            insert_if_number(&mut numbers, get_number(middle_line, x - 1));
+            insert_if_number(&mut numbers, get_number(middle_line, x + 1));
+            insert_if_number(&mut numbers, get_number(lower_line, x - 1));
+            insert_if_number(&mut numbers, get_number(lower_line, x));
+            insert_if_number(&mut numbers, get_number(lower_line, x + 1));
         }
     }
-    vec![1, 2]
+    numbers
+}
+
+pub fn sum_power_of_all_parts(filename: &str) -> u64 {
+    let one_line = read_to_string(filename).unwrap();
+    let lines: Vec<_> = one_line.lines().collect();
+    let mut all_sets: HashSet<u64> = HashSet::new();
+    for y in 1..lines.len() - 1 {
+        let one_set = get_part_numbers(lines[y - 1], lines[y], lines[y + 1]);
+        let line_nums = one_set
+            .clone()
+            .into_iter()
+            .map(|i| i.to_string() + ", ")
+            .collect::<String>();
+        println!("Part numbers adjacent to line {}: {}", y + 1, line_nums);
+
+        for x in one_set.clone().into_iter() {
+            if all_sets.contains(&x) {
+                println!("{} already in set", x);
+            }
+        }
+        all_sets.extend(one_set);
+    }
+
+    all_sets.into_iter().fold(0, |acc, num| acc + num)
 }
 
 #[cfg(test)]
@@ -84,10 +134,14 @@ mod tests {
 
     #[test]
     fn test_check_for_symbol() {
-        assert_eq!(is_symbol(".".as_bytes()[0]), false);
-        assert_eq!(is_symbol("1".as_bytes()[0]), false);
-        assert_eq!(is_symbol("#".as_bytes()[0]), true);
-        assert_eq!(is_symbol("*".as_bytes()[0]), true);
+        assert_eq!(is_symbol('.' as u8), false);
+        assert_eq!(is_symbol('1' as u8), false);
+        assert_eq!(is_symbol('#' as u8), true);
+        assert_eq!(is_symbol('*' as u8), true);
+        assert_eq!(is_symbol('*' as u8), true);
+        assert_eq!(is_symbol('&' as u8), true);
+        assert_eq!(is_symbol('/' as u8), true);
+        assert_eq!(is_symbol('$' as u8), true);
     }
 
     #[test]
@@ -109,6 +163,7 @@ mod tests {
 
     #[test]
     fn test_get_number_in_line() {
+        assert_eq!(get_number("", 0), None);
         assert_eq!(get_number("467...114..", 0), Some(467));
         assert_eq!(get_number("467...114..", 1), Some(467));
         assert_eq!(get_number("467...114..", 2), Some(467));
@@ -125,6 +180,31 @@ mod tests {
 
     #[test]
     fn test_get_valid_part_numbers() {
-        assert_eq!(get_part_numbers("467..114..", "...*......", ""), [467]);
+        assert_eq!(
+            get_part_numbers("467..114..", "...*......", ""),
+            HashSet::from([467])
+        );
+        assert_eq!(
+            get_part_numbers("467..114..", "...*..*...", "467..114.."),
+            HashSet::from([467, 114])
+        );
+        assert_eq!(
+            get_part_numbers("467..114..", "..........", "467..114.."),
+            HashSet::from([])
+        );
+        assert_eq!(get_part_numbers("", "467..114*.", ""), HashSet::from([114]));
+        assert_eq!(
+            get_part_numbers("467..114*.", "..........", "467..114.."),
+            HashSet::from([114])
+        );
+    }
+    #[test]
+    fn check_sum() {
+        assert_eq!(
+            HashSet::from([467, 114])
+                .into_iter()
+                .fold(0, |acc, num| acc + num),
+            581
+        );
     }
 }
