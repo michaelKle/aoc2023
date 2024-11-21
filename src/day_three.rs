@@ -12,12 +12,6 @@ fn is_number(x: u8) -> bool {
     numbers.find(x as char) != None
 }
 
-fn is_symbol_char(x: char) -> bool {
-    let non_symbols = "0123456789.";
-
-    non_symbols.find(x) == None
-}
-
 // returns true if line has a character
 // at pos or pos-1 or pos+2
 // that is not a dot or a numeral
@@ -142,14 +136,6 @@ mod tests {
         assert_eq!(is_symbol('&' as u8), true);
         assert_eq!(is_symbol('/' as u8), true);
         assert_eq!(is_symbol('$' as u8), true);
-    }
-
-    #[test]
-    fn test_check_for_symbol_char() {
-        assert_eq!(is_symbol_char('.'), false);
-        assert_eq!(is_symbol_char('1'), false);
-        assert_eq!(is_symbol_char('#'), true);
-        assert_eq!(is_symbol_char('*'), true);
     }
 
     #[test]
