@@ -29,12 +29,6 @@ fn is_symbol(x: u8) -> bool {
     non_symbols.find(x as char) == None
 }
 
-fn is_number(x: u8) -> bool {
-    let numbers = "0123456789";
-
-    numbers.find(x as char) != None
-}
-
 fn get_num_in_ascii_slice(bytes: &[u8]) -> usize {
     let mut erg: usize = 0;
     let mut exp: usize = 1;
@@ -87,115 +81,49 @@ fn symbol_around(
         || line_has_symbol(next_line, start, end + 1)
 }
 
-// returns true if line has a character
-// at pos or pos-1 or pos+2
-// that is not a dot or a numeral
-// assumes line is ASCII
-fn has_symbol(line: &str, pos: u16) -> bool {
-    let bytes = line.as_bytes();
-    let mut left = pos as usize;
-    let middle = pos as usize;
-    let mut right = pos as usize;
+// checks the current line for numbers and
+// then these numbers whether they are symbols
+fn valid_parts(
+    prev_line: &[u8],
+    current_line: &[u8],
+    next_line: &[u8],
+    line: usize,
+) -> HashMap<Key, usize> {
+    let mut ret = HashMap::new();
 
-    if pos > 0 {
-        left = (pos - 1) as usize;
-    }
-    if ((pos + 1) as usize) < (bytes.len()) {
-        right = (pos + 1) as usize;
-    }
-
-    is_symbol(bytes[left]) || is_symbol(bytes[middle]) || is_symbol(bytes[right])
-}
-
-fn get_number(line: &str, pos: usize) -> Option<u64> {
-    let bytes = line.as_bytes();
-    if pos >= bytes.len() {
-        return None;
-    }
-
-    let c = bytes[pos as usize];
-    let numbers = "0123456789";
-    let erg = numbers.find(c as char);
-    if erg == None {
-        return None;
-    }
-
-    let mut end: usize = bytes.len();
-    for x in pos..bytes.len() {
-        if !is_number(bytes[x as usize]) {
-            end = x as usize;
-            break;
+    let nums = numbers_in_line(current_line, line);
+    for (key, num) in nums {
+        if symbol_around(prev_line, current_line, next_line, key.start, key.end) {
+            ret.insert(key, num);
         }
     }
 
-    let mut num: u64 = 0;
-    let mut exp: u64 = 1;
-    for x in (0..end).rev() {
-        if !is_number(bytes[x]) {
-            break;
-        }
-
-        num += (bytes[x] - '0' as u8) as u64 * exp;
-        exp *= 10;
-    }
-
-    Some(num)
+    ret
 }
 
-fn insert_if_number(col: &mut HashSet<u64>, num: Option<u64>) {
-    if num.is_some() {
-        // if col.contains(&num.unwrap()) {
-        //     println!("Collection already contains {}", num.unwrap());
-        // }
-        col.insert(num.unwrap());
-    }
-}
+// pub fn sum_power_of_all_parts(filename: &str) -> u64 {
+//     let one_line = read_to_string(filename).unwrap();
+//     let lines: Vec<_> = one_line.lines().collect();
+//     let mut all_sets: HashSet<u64> = HashSet::new();
+//     for y in 1..lines.len() - 1 {
+//         let one_set = get_part_numbers(lines[y - 1], lines[y], lines[y + 1]);
+//         let line_nums = one_set
+//             .clone()
+//             .into_iter()
+//             .map(|i| i.to_string() + ", ")
+//             .collect::<String>();
+//         println!("Part numbers adjacent to line {}: {}", y + 1, line_nums);
 
-fn get_part_numbers(upper_line: &str, middle_line: &str, lower_line: &str) -> HashSet<u64> {
-    let mut numbers = HashSet::new();
+//         for x in one_set.clone().into_iter() {
+//             if all_sets.contains(&x) {
+//                 println!("{} already in set", x);
+//             }
+//         }
+//         all_sets.extend(one_set);
+//     }
 
-    let middle_line_bytes = middle_line.as_bytes();
-
-    for x in 1..middle_line_bytes.len() - 1 {
-        let c = middle_line_bytes[x];
-
-        if is_symbol(c) {
-            insert_if_number(&mut numbers, get_number(upper_line, x - 1));
-            insert_if_number(&mut numbers, get_number(upper_line, x));
-            insert_if_number(&mut numbers, get_number(upper_line, x + 1));
-            insert_if_number(&mut numbers, get_number(middle_line, x - 1));
-            insert_if_number(&mut numbers, get_number(middle_line, x + 1));
-            insert_if_number(&mut numbers, get_number(lower_line, x - 1));
-            insert_if_number(&mut numbers, get_number(lower_line, x));
-            insert_if_number(&mut numbers, get_number(lower_line, x + 1));
-        }
-    }
-    numbers
-}
-
-pub fn sum_power_of_all_parts(filename: &str) -> u64 {
-    let one_line = read_to_string(filename).unwrap();
-    let lines: Vec<_> = one_line.lines().collect();
-    let mut all_sets: HashSet<u64> = HashSet::new();
-    for y in 1..lines.len() - 1 {
-        let one_set = get_part_numbers(lines[y - 1], lines[y], lines[y + 1]);
-        let line_nums = one_set
-            .clone()
-            .into_iter()
-            .map(|i| i.to_string() + ", ")
-            .collect::<String>();
-        println!("Part numbers adjacent to line {}: {}", y + 1, line_nums);
-
-        for x in one_set.clone().into_iter() {
-            if all_sets.contains(&x) {
-                println!("{} already in set", x);
-            }
-        }
-        all_sets.extend(one_set);
-    }
-
-    all_sets.into_iter().fold(0, |acc, num| acc + num)
-}
+//     all_sets.into_iter().fold(0, |acc, num| acc + num)
+// }
 
 #[cfg(test)]
 mod tests {
@@ -267,42 +195,29 @@ mod tests {
     }
 
     #[test]
-    fn test_get_number_in_line() {
-        assert_eq!(get_number("", 0), None);
-        assert_eq!(get_number("467...114..", 0), Some(467));
-        assert_eq!(get_number("467...114..", 1), Some(467));
-        assert_eq!(get_number("467...114..", 2), Some(467));
-        assert_eq!(get_number("467...114..", 3), None);
-        assert_eq!(get_number("467...114..", 4), None);
-        assert_eq!(get_number("467...114..", 5), None);
-        assert_eq!(get_number("467...114..", 6), Some(114));
-        assert_eq!(get_number("467...114..", 7), Some(114));
-        assert_eq!(get_number("467...114..", 8), Some(114));
-        assert_eq!(get_number("467...114..", 9), None);
-        assert_eq!(get_number("467...114..", 10), None);
-        assert_eq!(get_number("467...114", 8), Some(114));
+    fn test_get_valid_parts() {
+        let expect1 = HashMap::from([(Key::new(5, 8, 2), 114)]);
+        assert_eq!(
+            valid_parts(
+                "".as_bytes(),
+                "467..114..".as_bytes(),
+                "....*.....".as_bytes(),
+                2
+            ),
+            expect1
+        );
+        let expect2 = HashMap::from([(Key::new(5, 8, 6), 114), (Key::new(0, 3, 6), 467)]);
+        assert_eq!(
+            valid_parts(
+                "".as_bytes(),
+                "467*.114..".as_bytes(),
+                "....*.....".as_bytes(),
+                6
+            ),
+            expect2
+        );
     }
 
-    #[test]
-    fn test_get_valid_part_numbers() {
-        assert_eq!(
-            get_part_numbers("467..114..", "...*......", ""),
-            HashSet::from([467])
-        );
-        assert_eq!(
-            get_part_numbers("467..114..", "...*..*...", "467..114.."),
-            HashSet::from([467, 114])
-        );
-        assert_eq!(
-            get_part_numbers("467..114..", "..........", "467..114.."),
-            HashSet::from([])
-        );
-        assert_eq!(get_part_numbers("", "467..114*.", ""), HashSet::from([114]));
-        assert_eq!(
-            get_part_numbers("467..114*.", "..........", "467..114.."),
-            HashSet::from([114])
-        );
-    }
     #[test]
     fn check_sum() {
         assert_eq!(
