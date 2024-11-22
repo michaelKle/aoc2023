@@ -24,7 +24,7 @@ fn main() {
     // day 3
     {
         let _day03_path = std::env::var("AOC03_FILE").expect("AOC03_FILE must be set.");
-        // let sum = day_three::sum_power_of_all_parts(&_day03_path);
-        // println!("Day 3: Sum of all all part numbers {0}", sum);
+        let sum = day_three::sum_all_parts(&_day03_path);
+        println!("Day 3: Sum of all all part numbers {0}", sum);
     }
 }

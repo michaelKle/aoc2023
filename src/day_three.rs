@@ -101,29 +101,54 @@ fn valid_parts(
     ret
 }
 
-// pub fn sum_power_of_all_parts(filename: &str) -> u64 {
-//     let one_line = read_to_string(filename).unwrap();
-//     let lines: Vec<_> = one_line.lines().collect();
-//     let mut all_sets: HashSet<u64> = HashSet::new();
-//     for y in 1..lines.len() - 1 {
-//         let one_set = get_part_numbers(lines[y - 1], lines[y], lines[y + 1]);
-//         let line_nums = one_set
-//             .clone()
-//             .into_iter()
-//             .map(|i| i.to_string() + ", ")
-//             .collect::<String>();
-//         println!("Part numbers adjacent to line {}: {}", y + 1, line_nums);
+fn print_hash(parts: &HashMap<Key, usize>) -> () {
+    for (key, num) in parts.into_iter() {
+        print!("{:?} = {},", key, num);
+    }
+    println!();
+}
 
-//         for x in one_set.clone().into_iter() {
-//             if all_sets.contains(&x) {
-//                 println!("{} already in set", x);
-//             }
-//         }
-//         all_sets.extend(one_set);
-//     }
+fn get_all_parts(filename: &str) -> HashMap<Key, usize> {
+    let one_line = read_to_string(filename).unwrap();
+    let lines: Vec<_> = one_line.lines().collect();
 
-//     all_sets.into_iter().fold(0, |acc, num| acc + num)
-// }
+    //println!("Line 0");
+    let mut all_sets = valid_parts("".as_bytes(), lines[0].as_bytes(), lines[1].as_bytes(), 0);
+    //print_hash(&all_sets);
+
+    for y in 1..lines.len() - 1 {
+        let one_set = valid_parts(
+            lines[y - 1].as_bytes(),
+            lines[y].as_bytes(),
+            lines[y + 1].as_bytes(),
+            y,
+        );
+
+        //println!("Line {}", y);
+        //print_hash(&one_set);
+
+        all_sets.extend(one_set.into_iter());
+    }
+
+    let last_set = valid_parts(
+        lines[lines.len() - 2].as_bytes(),
+        lines[lines.len() - 1].as_bytes(),
+        "".as_bytes(),
+        lines.len() - 1,
+    );
+    //println!("Line {}", lines.len() - 1);
+    //print_hash(&last_set);
+
+    all_sets.extend(last_set.into_iter());
+
+    all_sets
+}
+
+pub fn sum_all_parts(filename: &str) -> usize {
+    let parts = get_all_parts(filename);
+
+    parts.into_iter().fold(0, |acc, (_, num)| acc + num)
+}
 
 #[cfg(test)]
 mod tests {
