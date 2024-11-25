@@ -2,7 +2,7 @@ extern crate regex;
 use regex::bytes::Regex;
 use std::{
     cmp::{max, min},
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     fs::read_to_string,
 };
 
@@ -144,6 +144,32 @@ fn get_all_parts(filename: &str) -> HashMap<Key, usize> {
     all_sets
 }
 
+fn get_stars_in_line(line: &[u8], linenum: usize) -> Vec<Key> {
+    let mut ret = Vec::new();
+
+    let re = Regex::new(r"(\*)").unwrap();
+    for cap in re.find_iter(line) {
+        ret.push(Key::new(cap.start(), cap.end(), linenum));
+    }
+
+    ret
+}
+
+// finds all stars
+fn get_all_star_symbols(filename: &str) -> Vec<Key> {
+    let mut ret = Vec::new();
+
+    let one_line = read_to_string(filename).unwrap();
+    let lines: Vec<_> = one_line.lines().collect();
+
+    for y in 0..lines.len() {
+        let line = lines[y].as_bytes();
+        ret.extend(get_stars_in_line(line, y));
+    }
+
+    ret
+}
+
 pub fn sum_all_parts(filename: &str) -> usize {
     let parts = get_all_parts(filename);
 
@@ -183,6 +209,12 @@ mod tests {
         assert_eq!(line_has_symbol("...*......".as_bytes(), 0, 2), false);
         assert_eq!(line_has_symbol("...*......".as_bytes(), 3, 4), true);
         assert_eq!(line_has_symbol("...*......".as_bytes(), 4, 3), false);
+    }
+
+    #[test]
+    fn test_check_finds_star_symbols_in_line() {
+        let expect: Vec<Key> = vec![Key::new(3, 4, 17), Key::new(9, 10, 17)];
+        assert_eq!(get_stars_in_line("./.*4633.*.55#".as_bytes(), 17), expect);
     }
 
     #[test]
@@ -240,16 +272,6 @@ mod tests {
                 6
             ),
             expect2
-        );
-    }
-
-    #[test]
-    fn check_sum() {
-        assert_eq!(
-            HashSet::from([467, 114])
-                .into_iter()
-                .fold(0, |acc, num| acc + num),
-            581
         );
     }
 }
