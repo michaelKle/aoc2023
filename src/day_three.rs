@@ -6,7 +6,7 @@ use std::{
     fs::read_to_string,
 };
 
-#[derive(Hash, Eq, PartialEq, Debug)]
+#[derive(Hash, Eq, PartialEq, Debug, Clone)]
 struct Key {
     start: usize,
     end: usize,
@@ -101,12 +101,12 @@ fn valid_parts(
     ret
 }
 
-fn print_hash(parts: &HashMap<Key, usize>) -> () {
-    for (key, num) in parts.into_iter() {
-        print!("{:?} = {},", key, num);
-    }
-    println!();
-}
+// fn print_hash(parts: &HashMap<Key, usize>) -> () {
+//     for (key, num) in parts.into_iter() {
+//         print!("{:?} = {},", key, num);
+//     }
+//     println!();
+// }
 
 fn get_all_parts(filename: &str) -> HashMap<Key, usize> {
     let one_line = read_to_string(filename).unwrap();
@@ -155,6 +155,40 @@ fn get_stars_in_line(line: &[u8], linenum: usize) -> Vec<Key> {
     ret
 }
 
+fn is_symbol_close_to_num(symbol: &Key, num: &Key) -> bool {
+    if symbol.line.abs_diff(num.line) >= 2 {
+        return false;
+    }
+
+    if symbol.end > num.end + 1 {
+        return false;
+    }
+
+    if symbol.start + 1 < num.start {
+        return false;
+    }
+
+    return true;
+}
+
+// gets numbers connected to star symbol
+fn check_symbol_in_num_hashes(
+    symbol: &Key,
+    nums: &HashMap<Key, usize>,
+) -> Option<(Key, usize, usize)> {
+    let mut found = Vec::new();
+    //found.push(symbol.clone());
+    for (k, val) in nums {
+        if is_symbol_close_to_num(symbol, k) {
+            found.push(*val);
+        }
+    }
+    if found.len() != 2 {
+        return None;
+    }
+    Some((symbol.clone(), found[0], found[1]))
+}
+
 // finds all stars
 fn get_all_star_symbols(filename: &str) -> Vec<Key> {
     let mut ret = Vec::new();
@@ -168,6 +202,24 @@ fn get_all_star_symbols(filename: &str) -> Vec<Key> {
     }
 
     ret
+}
+
+pub fn get_all_connected_parts(filename: &str) -> usize {
+    let parts = get_all_parts(filename);
+    let stars = get_all_star_symbols(filename);
+
+    let mut sum: usize = 0;
+    for sym in stars {
+        let part_match = check_symbol_in_num_hashes(&sym, &parts);
+        if part_match.is_some() {
+            let mat = part_match.unwrap();
+            let erg = mat.1 * mat.2;
+            //println!("{:?} => {}*{} = {}", mat, mat.1, mat.2, erg);
+            sum += erg;
+        }
+    }
+
+    sum
 }
 
 pub fn sum_all_parts(filename: &str) -> usize {
@@ -273,5 +325,85 @@ mod tests {
             ),
             expect2
         );
+    }
+
+    #[test]
+    fn test_get_valid_nums_to_symbol() {
+        let sym = Key {
+            start: 0,
+            end: 1,
+            line: 0,
+        };
+        assert!(is_symbol_close_to_num(
+            &sym,
+            &Key {
+                start: 0,
+                end: 3,
+                line: 0
+            }
+        ));
+        assert!(is_symbol_close_to_num(
+            &sym,
+            &Key {
+                start: 1,
+                end: 3,
+                line: 0
+            }
+        ));
+        assert!(!is_symbol_close_to_num(
+            &sym,
+            &Key {
+                start: 2,
+                end: 3,
+                line: 0
+            }
+        ));
+
+        assert!(is_symbol_close_to_num(
+            &sym,
+            &Key {
+                start: 0,
+                end: 3,
+                line: 1
+            }
+        ));
+        assert!(!is_symbol_close_to_num(
+            &sym,
+            &Key {
+                start: 0,
+                end: 3,
+                line: 2
+            }
+        ));
+
+        let sym_mid = Key {
+            start: 10,
+            end: 11,
+            line: 0,
+        };
+        assert!(is_symbol_close_to_num(
+            &sym_mid,
+            &Key {
+                start: 8,
+                end: 11,
+                line: 0
+            }
+        ));
+        assert!(is_symbol_close_to_num(
+            &sym_mid,
+            &Key {
+                start: 8,
+                end: 10,
+                line: 0
+            }
+        ));
+        assert!(!is_symbol_close_to_num(
+            &sym_mid,
+            &Key {
+                start: 8,
+                end: 9,
+                line: 0
+            }
+        ));
     }
 }
